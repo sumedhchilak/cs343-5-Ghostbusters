@@ -11,7 +11,6 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
 import util
 from game import Agent
 from game import Directions
@@ -163,4 +162,29 @@ class GreedyBustersAgent(BustersAgent):
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+
+        # print "livingGhostPositionDistributions: ", livingGhostPositionDistributions
+
+        minDist = float('inf')
+        minGhost = None
+        closestLoc = float('-inf')
+
+        for ghost in livingGhostPositionDistributions:
+            closestLoc = ghost.argMax()
+            tempDist = self.distancer.getDistance(closestLoc, pacmanPosition)
+            if tempDist < minDist:
+                minDist = tempDist
+                minGhost = closestLoc
+        
+        bestAction = None
+        minDist = float('inf')
+
+        for action in legal:
+            successorPosition = Actions.getSuccessor(pacmanPosition, action)
+            tempDist = self.distancer.getDistance(successorPosition, minGhost)
+            if tempDist < minDist:
+                minDist = tempDist
+                bestAction = action
+
+        return bestAction
