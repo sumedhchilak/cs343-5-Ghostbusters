@@ -451,10 +451,14 @@ class JointParticleFilter:
 
         self.partList = list()
 
-        partsPerPos = self.numParticles
-        partsPerPos /= len(self.legalPositions)
+        permList = list(itertools.product(self.legalPositions, repeat=self.numGhosts))
+        random.shuffle(permList)
+        
 
-        for p in self.legalPositions:
+        partsPerPos = self.numParticles
+        partsPerPos /= len(permList)
+
+        for p in permList:
             for i in range(partsPerPos):
                 self.partList.append(p)
 
@@ -466,7 +470,7 @@ class JointParticleFilter:
         self.ghostAgents.append(agent)
 
     def getJailPosition(self, i):
-        return (2 * i + 1, 1)
+        return (2 * i + 1, 1);
 
     def observeState(self, gameState):
         """
@@ -504,6 +508,67 @@ class JointParticleFilter:
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
         "*** YOUR CODE HERE ***"
+
+        allPossible = util.Counter()
+
+        # for i in range(self.numGhosts):
+
+        #     if noiseyDistances[i] is None:
+        #         newPartList = list()
+        #         jailPos = self.getJailPosition(i)
+        #         for i in range(self.numParticles):
+        #             newPartList.append(jailPos)
+        #         self.partList = newPartList
+        #     else:
+                
+        
+
+        for index, p in enumerate(self.partList):
+            belief = 1
+            for ghost in range(self.numGhosts):
+                if noisyDistances[ghost] is None:
+                    p = self.getParticleWithGhostInJail(p, ghost)
+                    self.partList[index] = p
+                else:
+                    trueDistance = util.manhattanDistance(p[ghost], pacmanPosition)
+                    belief *= emissionModels[ghost][trueDistance]
+            allPossible[p] += belief
+
+        if allPossible.totalCount() == 0:
+            self.initializeParticles()
+
+            for index, p in enumerate(self.partList):
+                for ghost in range(self.numGhosts):
+                    if noisyDistances[ghost] is None:
+                        p = self.getParticleWithGhostInJail(p, ghost)
+                        self.partList[index] = p       
+        else:
+            newPartList = list()
+            for index in range(self.numParticles):
+                newPartList.append(util.sample(allPossible))
+            self.partList = newPartList
+        
+
+        # if noisyDistance is None:
+        #     newPartList = list()
+        #     jailPos = self.getJailPosition()
+        #     for i in range(self.numParticles):
+        #         newPartList.append(jailPos)
+        #     self.partList = newPartList
+        # else:
+        #     beliefDist = self.getBeliefDistribution()
+        #     for p in self.legalPositions:
+        #         trueDistance = util.manhattanDistance(p, pacmanPosition)
+        #         if emissionModel[trueDistance] > 0:
+        #             allPossible[p] += emissionModel[trueDistance] * beliefDist[p]
+                    
+        #     if allPossible.totalCount() == 0:
+        #         self.initializeUniformly(gameState)
+        #     else:
+        #         newPartList = list()
+        #         for index in range(self.numParticles):
+        #             newPartList.append(util.sample(allPossible))
+        #         self.partList = newPartList
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
