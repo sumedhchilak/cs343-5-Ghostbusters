@@ -272,6 +272,15 @@ class ParticleFilter(InferenceModule):
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        self.partList = list()
+
+        partsPerPos = self.numParticles
+        partsPerPos /= len(self.legalPositions)
+
+        for p in self.legalPositions:
+            for i in range(partsPerPos):
+                self.partList.append(p)
+
 
     def observe(self, observation, gameState):
         """
@@ -304,7 +313,29 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        allPossible = util.Counter()
+
+        if noisyDistance is None:
+            newPartList = list()
+            jailPos = self.getJailPosition()
+            for i in range(self.numParticles):
+                newPartList.append(jailPos)
+            self.partList = newPartList
+        else:
+            beliefDist = self.getBeliefDistribution()
+            for p in self.legalPositions:
+                trueDistance = util.manhattanDistance(p, pacmanPosition)
+                if emissionModel[trueDistance] > 0:
+                    allPossible[p] += emissionModel[trueDistance] * beliefDist[p]
+                    
+            if allPossible.totalCount() == 0:
+                self.initializeUniformly(gameState)
+            else:
+                newPartList = list()
+                for index in range(self.numParticles):
+                    newPartList.append(util.sample(allPossible))
+                self.partList = newPartList
 
     def elapseTime(self, gameState):
         """
@@ -321,7 +352,14 @@ class ParticleFilter(InferenceModule):
         a belief distribution.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+        temp = list()
+
+        for oldPos in self.partList:
+            newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
+            temp.append(util.sample(newPosDist))
+        
+        self.partList = temp
 
     def getBeliefDistribution(self):
         """
@@ -331,7 +369,13 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+        beliefs = util.Counter()
+
+        for part in self.partList:
+            beliefs[part] += 1
+        beliefs.normalize()
+        return beliefs
 
 class MarginalInference(InferenceModule):
     """
@@ -405,6 +449,15 @@ class JointParticleFilter:
         """
         "*** YOUR CODE HERE ***"
 
+        self.partList = list()
+
+        partsPerPos = self.numParticles
+        partsPerPos /= len(self.legalPositions)
+
+        for p in self.legalPositions:
+            for i in range(partsPerPos):
+                self.partList.append(p)
+
     def addGhostAgent(self, agent):
         """
         Each ghost agent is registered separately and stored (in case they are
@@ -413,7 +466,7 @@ class JointParticleFilter:
         self.ghostAgents.append(agent)
 
     def getJailPosition(self, i):
-        return (2 * i + 1, 1);
+        return (2 * i + 1, 1)
 
     def observeState(self, gameState):
         """
@@ -518,7 +571,14 @@ class JointParticleFilter:
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+        beliefs = util.Counter()
+
+        for part in self.partList:
+            beliefs[part] += 1
+        beliefs.normalize()
+        return beliefs
+
 
 # One JointInference module is shared globally across instances of MarginalInference
 jointInference = JointParticleFilter()
