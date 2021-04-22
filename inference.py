@@ -511,18 +511,6 @@ class JointParticleFilter:
 
         allPossible = util.Counter()
 
-        # for i in range(self.numGhosts):
-
-        #     if noiseyDistances[i] is None:
-        #         newPartList = list()
-        #         jailPos = self.getJailPosition(i)
-        #         for i in range(self.numParticles):
-        #             newPartList.append(jailPos)
-        #         self.partList = newPartList
-        #     else:
-                
-        
-
         for index, p in enumerate(self.partList):
             belief = 1
             for ghost in range(self.numGhosts):
@@ -547,28 +535,7 @@ class JointParticleFilter:
             for index in range(self.numParticles):
                 newPartList.append(util.sample(allPossible))
             self.partList = newPartList
-        
 
-        # if noisyDistance is None:
-        #     newPartList = list()
-        #     jailPos = self.getJailPosition()
-        #     for i in range(self.numParticles):
-        #         newPartList.append(jailPos)
-        #     self.partList = newPartList
-        # else:
-        #     beliefDist = self.getBeliefDistribution()
-        #     for p in self.legalPositions:
-        #         trueDistance = util.manhattanDistance(p, pacmanPosition)
-        #         if emissionModel[trueDistance] > 0:
-        #             allPossible[p] += emissionModel[trueDistance] * beliefDist[p]
-                    
-        #     if allPossible.totalCount() == 0:
-        #         self.initializeUniformly(gameState)
-        #     else:
-        #         newPartList = list()
-        #         for index in range(self.numParticles):
-        #             newPartList.append(util.sample(allPossible))
-        #         self.partList = newPartList
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
@@ -624,15 +591,17 @@ class JointParticleFilter:
               agents are always the same.
         """
         newParticles = []
-        for oldParticle in self.particles:
+        for oldParticle in self.partList:
             newParticle = list(oldParticle) # A list of ghost positions
             # now loop through and update each entry in newParticle...
-
             "*** YOUR CODE HERE ***"
-
+            for ghost in range(self.numGhosts):
+                newPosDist = getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), 
+                    ghost, self.ghostAgents[ghost])
+                newParticle[ghost] = util.sample(newPosDist)
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
-        self.particles = newParticles
+        self.partList = newParticles
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
